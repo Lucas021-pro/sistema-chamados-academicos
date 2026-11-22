@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head th:fragment="headTailwind(titulo)">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${titulo}">Gestão de Chamados Acadêmicos</title>
+    <script src="/js/tema.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Geist"', 'system-ui', '-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'sans-serif']
+                    }
+                }
+            }
+        };
+    </script>
+    <style type="text/tailwindcss">
+        @layer base {
+            html {
+                font-size: 18px;
+            }
+        }
+    </style>
+    <link rel="stylesheet" href="/css/styles.css" />
+</head>
+<body>
+
+<header th:fragment="cabecalhoModerno(ativo)" id="appNav" class="bg-slate-900 text-white border-b border-slate-800">
+    <div class="max-w-6xl mx-auto px-4 h-16 flex items-center gap-4">
+        <a href="/chamados" class="font-semibold text-base whitespace-nowrap">
+            Gestão de Chamados Acadêmicos
+        </a>
+        <nav class="ml-auto flex items-center gap-1.5 text-base" aria-label="Principal">
+            <a href="/chamados"
+               th:classappend="${ativo == 'chamados'} ? 'bg-white/10 text-white' : 'text-slate-300 hover:text-white hover:bg-white/10'"
+               th:attr="aria-current=${ativo == 'chamados'} ? 'page' : null"
+               class="navlink px-3.5 py-2 rounded-md">Chamados</a>
+
+            <a href="/indicadores"
+               th:classappend="${ativo == 'indicadores'} ? 'bg-white/10 text-white' : 'text-slate-300 hover:text-white hover:bg-white/10'"
+               th:attr="aria-current=${ativo == 'indicadores'} ? 'page' : null"
+               class="navlink px-3.5 py-2 rounded-md">Indicadores</a>
+
+            <a href="/relatorios"
+               th:classappend="${ativo == 'relatorios'} ? 'bg-white/10 text-white' : 'text-slate-300 hover:text-white hover:bg-white/10'"
+               th:attr="aria-current=${ativo == 'relatorios'} ? 'page' : null"
+               class="navlink px-3.5 py-2 rounded-md">Relatórios</a>
+
+            <button type="button"
+                    onclick="alternarTema()"
+                    aria-label="Alternar tema escuro"
+                    class="ml-2 p-2.5 rounded-md hover:bg-white/10">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/>
+                </svg>
+            </button>
+
+            <details class="relative">
+                <summary class="list-none cursor-pointer w-9 h-9 rounded-full bg-slate-700 text-xs font-semibold grid place-items-center uppercase"
+                         aria-label="Menu da conta"
+                         th:text="${session.usuario != null ? #strings.substring(session.usuario, 0, #strings.length(session.usuario) >= 2 ? 2 : 1) : 'AD'}">
+                    AD
+                </summary>
+                <div class="absolute right-0 mt-2 w-48 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg p-1 z-20 text-sm">
+                    <div class="px-3 py-2 border-b border-slate-100 dark:border-slate-700">
+                        <div class="font-medium" th:text="${session.usuario != null ? session.usuario : 'Administrador'}">Administrador</div>
+                        <div class="text-xs text-slate-500 dark:text-slate-400">Secretaria Acadêmica</div>
+                    </div>
+                    <a href="/chamados" class="block px-3 py-2 rounded hover:bg-slate-100 dark:hover:bg-slate-700">Meus chamados</a>
+                    <form th:action="@{/logout}" method="post" class="m-0">
+                        <button type="submit" class="w-full text-left block px-3 py-2 rounded hover:bg-slate-100 dark:hover:bg-slate-700 text-red-600 dark:text-red-400">
+                            Sair
+                        </button>
+                    </form>
+                </div>
+            </details>
+        </nav>
+    </div>
+</header>
+
+<div th:fragment="mensagensModernas">
+    <div th:if="${mensagemSucesso}" role="status"
+         class="mb-4 rounded-xl border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/40 px-4 py-3 text-sm font-medium text-emerald-800 dark:text-emerald-300"
+         th:text="${mensagemSucesso}"></div>
+    <div th:if="${mensagemErro}" role="alert"
+         class="mb-4 rounded-xl border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950/40 px-4 py-3 text-sm font-medium text-red-800 dark:text-red-300"
+         th:text="${mensagemErro}"></div>
+</div>
+
+</body>
+</html>

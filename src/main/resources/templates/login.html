@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Entrar | Central de Atendimento Acadêmico</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/css/styles.css" />
+    <style>
+        input::-ms-reveal,
+        input::-ms-clear {
+            display: none !important;
+        }
+    </style>
+</head>
+<body class="bg-white text-slate-900">
+
+<section class="panel">
+    <div class="min-h-screen grid lg:grid-cols-2">
+        <!-- Painel Esquerdo -->
+        <div class="hidden lg:flex flex-col justify-between bg-slate-900 text-white p-12">
+            <div class="font-semibold text-base">
+                IFSP • Campus São Paulo
+            </div>
+
+            <div class="max-w-md">
+                <h1 class="text-4xl font-semibold leading-tight text-balance">
+                    Central de Atendimento Acadêmico
+                </h1>
+                <p class="text-slate-300 mt-4 leading-relaxed">
+                    Abra solicitações, acompanhe o andamento e receba respostas da secretaria, coordenação e TI em um só lugar.
+                </p>
+                <ul class="mt-8 space-y-4 text-sm">
+                    <li class="flex gap-3">
+                        <span class="w-8 h-8 shrink-0 rounded-lg bg-white/10 grid place-items-center">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                <path d="M3 6h18M6 12h12M10 18h4"/>
+                            </svg>
+                        </span>
+                        <span>
+                            <b class="block">Triagem automática</b>
+                            <span class="text-slate-400">Cada chamado vai direto para a equipe certa.</span>
+                        </span>
+                    </li>
+                    <li class="flex gap-3">
+                        <span class="w-8 h-8 shrink-0 rounded-lg bg-white/10 grid place-items-center">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                <circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>
+                            </svg>
+                        </span>
+                        <span>
+                            <b class="block">Histórico transparente</b>
+                            <span class="text-slate-400">Status e pareceres registrados em cada etapa.</span>
+                        </span>
+                    </li>
+                </ul>
+            </div>
+
+            <p class="text-xs text-slate-400">
+                Problemas para acessar? <a href="mailto:ti@ifsp.edu.br" class="text-slate-300 underline">ti@ifsp.edu.br</a> · Ramal 4020
+            </p>
+        </div>
+
+        <!-- Painel Direito -->
+        <div class="flex items-center justify-center p-6 bg-white">
+            <form id="loginForm" th:action="@{/login}" method="post" class="w-full max-w-sm">
+                <div class="lg:hidden font-semibold text-base mb-8">
+                    Central de Atendimento Acadêmico
+                </div>
+
+                <h2 class="text-2xl font-semibold">Entrar</h2>
+                <p class="text-sm text-slate-600 mt-1">Use sua matrícula ou usuário institucional.</p>
+
+                <div id="loginErr"
+                     role="alert"
+                     th:if="${erro}"
+                     th:text="${erro}"
+                     class="mt-5 text-sm bg-red-50 text-red-700 border border-red-200 rounded-lg px-3 py-2">
+                    Usuário ou senha incorretos.
+                </div>
+
+                <div class="mt-6 space-y-4">
+                    <div>
+                        <label for="user" class="text-sm font-medium">Usuário ou matrícula</label>
+                        <input id="user"
+                               name="usuario"
+                               autocomplete="username"
+                               required
+                               autofocus
+                               class="field mt-1.5 w-full px-3 py-2.5 rounded-lg border border-slate-300 text-sm"
+                               placeholder="Ex.: 2024001234" />
+                    </div>
+
+                    <div>
+                        <label for="pass" class="text-sm font-medium">Senha</label>
+                        <div class="relative mt-1.5">
+                            <input id="pass"
+                                   name="senha"
+                                   type="password"
+                                   autocomplete="current-password"
+                                   required
+                                   class="field w-full pl-3 pr-10 py-2.5 rounded-lg border border-slate-300 text-sm" />
+                            <button type="button"
+                                    id="eye"
+                                    aria-label="Mostrar senha"
+                                    class="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-slate-500 hover:text-slate-800">
+                                <svg id="eyeOpen" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                    <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/>
+                                    <circle cx="12" cy="12" r="3"/>
+                                </svg>
+                                <svg id="eyeClosed" class="hidden" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
+                                    <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
+                                    <path d="m1 1 22 22"/>
+                                </svg>
+                            </button>
+                        </div>
+                        <p id="caps" class="hidden text-xs text-amber-700 mt-1">Caps Lock está ativado.</p>
+                    </div>
+
+                    <button type="submit"
+                            id="loginBtn"
+                            class="w-full py-2.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium inline-flex items-center justify-center gap-2">
+                        Entrar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</section>
+
+<script>
+    const pass = document.getElementById('pass');
+    const eye = document.getElementById('eye');
+    const eyeOpen = document.getElementById('eyeOpen');
+    const eyeClosed = document.getElementById('eyeClosed');
+    const loginForm = document.getElementById('loginForm');
+
+    eye.addEventListener('click', () => {
+        const mostrar = pass.type === 'password';
+        pass.type = mostrar ? 'text' : 'password';
+        eyeOpen.classList.toggle('hidden', mostrar);
+        eyeClosed.classList.toggle('hidden', !mostrar);
+        eye.setAttribute('aria-label', mostrar ? 'Ocultar senha' : 'Mostrar senha');
+    });
+
+    pass.addEventListener('keyup', e => {
+        if (typeof e.getModifierState === 'function') {
+            document.getElementById('caps').classList.toggle('hidden', !e.getModifierState('CapsLock'));
+        }
+    });
+
+    loginForm.addEventListener('submit', e => {
+        if (!loginForm.checkValidity()) {
+            e.preventDefault();
+            loginForm.reportValidity();
+            return;
+        }
+        const b = document.getElementById('loginBtn');
+        b.disabled = true;
+        b.innerHTML = '<span class="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin"></span> Entrando...';
+    });
+</script>
+</body>
+</html>

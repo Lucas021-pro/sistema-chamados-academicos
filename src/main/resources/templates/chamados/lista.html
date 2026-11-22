@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: headTailwind('Chamados | Gestão de Chamados Acadêmicos')}"></head>
+<body class="bg-slate-100 dark:bg-slate-950 text-slate-900 dark:text-slate-100 min-h-screen">
+
+<header th:replace="~{fragments/layout :: cabecalhoModerno('chamados')}"></header>
+
+<section class="panel">
+    <div class="max-w-6xl mx-auto px-4 py-6">
+        <main class="space-y-4 min-w-0"
+              th:with="totalGeral=${totalFiltrados != null ? totalFiltrados : #lists.size(chamados)},
+                       totalAguardando=${aguardando != null ? aguardando : #lists.size(chamados.?[status == 'ABERTO' || status == 'EM_ANALISE'])}">
+
+            <div th:replace="~{fragments/layout :: mensagensModernas}"></div>
+
+            <div class="flex flex-wrap items-end justify-between gap-3">
+                <div>
+                    <h1 class="text-xl font-semibold">Chamados</h1>
+                    <p id="subtituloChamados"
+                       class="text-sm text-slate-600 dark:text-slate-400 mt-1"
+                       th:text="${totalGeral} + ' chamado(s) · ' + ${totalAguardando} + ' aguardando ação'">
+                        0 chamados · 0 aguardando ação
+                    </p>
+                </div>
+                <a href="/chamados/novo"
+                   class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <path d="M12 5v14M5 12h14"/>
+                    </svg>
+                    Novo chamado
+                </a>
+            </div>
+
+            <form id="filtroForm" method="get" action="/chamados" class="space-y-4">
+                <input type="hidden" id="statusInput" th:name="${(filtro.status != null && !#strings.isEmpty(filtro.status)) ? 'status' : null}" th:value="${filtro.status}" />
+                <input type="hidden" id="inicioInput" th:name="${filtro.inicio != null ? 'inicio' : null}" th:value="${filtro.inicio}" />
+                <input type="hidden" id="fimInput" th:name="${filtro.fim != null ? 'fim' : null}" th:value="${filtro.fim}" />
+
+                <div class="flex items-center gap-2 overflow-x-auto">
+                    <div class="flex gap-1 bg-slate-200/70 dark:bg-slate-800 p-1 rounded-lg text-sm"
+                         role="group"
+                         aria-label="Filtrar por status"
+                         id="statusSeg">
+                        <button type="button"
+                                class="seg px-3 py-1.5 rounded-md text-slate-600 dark:text-slate-300"
+                                th:attr="aria-pressed=${filtro.status == null || filtro.status == ''}"
+                                data-s="">
+                            Todos
+                            <span class="status-count text-slate-400"
+                                  data-count-for=""
+                                  th:text="${(filtro.status == null || filtro.status == '') ? totalGeral : ''}"></span>
+                        </button>
+
+                        <button type="button"
+                                class="seg px-3 py-1.5 rounded-md text-slate-600 dark:text-slate-300"
+                                th:attr="aria-pressed=${filtro.status == 'ABERTO'}"
+                                data-s="ABERTO">
+                            Abertos
+                            <span class="status-count text-slate-400"
+                                  data-count-for="ABERTO"
+                                  th:text="${((filtro.status == null || filtro.status == '') && !pagina.hasNext()) ? #lists.size(chamados.?[status == 'ABERTO']) : (filtro.status == 'ABERTO' ? totalGeral : '')}"></span>
+                        </button>
+
+                        <button type="button"
+                                class="seg px-3 py-1.5 rounded-md text-slate-600 dark:text-slate-300"
+                                th:attr="aria-pressed=${filtro.status == 'EM_ANALISE'}"
+                                data-s="EM_ANALISE">
+                            Em análise
+                            <span class="status-count text-slate-400"
+                                  data-count-for="EM_ANALISE"
+                                  th:text="${((filtro.status == null || filtro.status == '') && !pagina.hasNext()) ? #lists.size(chamados.?[status == 'EM_ANALISE']) : (filtro.status == 'EM_ANALISE' ? totalGeral : '')}"></span>
+                        </button>
+
+                        <button type="button"
+                                class="seg px-3 py-1.5 rounded-md text-slate-600 dark:text-slate-300"
+                                th:attr="aria-pressed=${filtro.status == 'CONCLUIDO'}"
+                                data-s="CONCLUIDO">
+                            Concluídos
+                            <span class="status-count text-slate-400"
+                                  data-count-for="CONCLUIDO"
+                                  th:text="${((filtro.status == null || filtro.status == '') && !pagina.hasNext()) ? #lists.size(chamados.?[status == 'CONCLUIDO']) : (filtro.status == 'CONCLUIDO' ? totalGeral : '')}"></span>
+                        </button>
+
+                        <button type="button"
+                                class="seg px-3 py-1.5 rounded-md text-slate-600 dark:text-slate-300"
+                                th:attr="aria-pressed=${filtro.status == 'CANCELADO'}"
+                                data-s="CANCELADO">
+                            Cancelados
+                            <span class="status-count text-slate-400"
+                                  data-count-for="CANCELADO"
+                                  th:text="${((filtro.status == null || filtro.status == '') && !pagina.hasNext()) ? #lists.size(chamados.?[status == 'CANCELADO']) : (filtro.status == 'CANCELADO' ? totalGeral : '')}"></span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Barra de filtros compacta -->
+                <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-3 flex flex-wrap items-center gap-2">
+                    <label class="relative flex-1 min-w-[200px]">
+                        <span class="sr-only">Buscar chamados</span>
+                        <svg class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                            <circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>
+                        </svg>
+                        <input id="q"
+                               th:name="${(filtro.busca != null && !#strings.isEmpty(filtro.busca)) ? 'busca' : null}"
+                               type="search"
+                               th:value="${filtro.busca}"
+                               placeholder="Buscar por título, descrição ou #ID"
+                               class="w-full pl-9 pr-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                    </label>
+
+                    <select id="fCat"
+                            th:name="${param.categoria != null ? 'categoria' : null}"
+                            aria-label="Categoria"
+                            onchange="this.name='categoria'; this.form.submit()"
+                            class="py-2 px-3 rounded-lg border border-slate-300 dark:border-slate-700 text-sm bg-white dark:bg-slate-950">
+                        <option value="" hidden th:selected="${param.categoria == null}">Categoria</option>
+                        <option value="" th:selected="${param.categoria != null && (filtro.categoria == null || filtro.categoria == '')}">Todas</option>
+                        <option value="Matrícula" th:selected="${filtro.categoria == 'Matrícula'}">Matrícula</option>
+                        <option value="Documentos" th:selected="${filtro.categoria == 'Documentos'}">Documentos</option>
+                        <option value="Suporte técnico" th:selected="${filtro.categoria == 'Suporte técnico'}">Suporte técnico</option>
+                        <option value="Atendimento acadêmico" th:selected="${filtro.categoria == 'Atendimento acadêmico'}">Atendimento acadêmico</option>
+                    </select>
+
+                    <select id="fPri"
+                            th:name="${param.prioridade != null ? 'prioridade' : null}"
+                            aria-label="Prioridade"
+                            onchange="this.name='prioridade'; this.form.submit()"
+                            class="py-2 px-3 rounded-lg border border-slate-300 dark:border-slate-700 text-sm bg-white dark:bg-slate-950">
+                        <option value="" hidden th:selected="${param.prioridade == null}">Prioridade</option>
+                        <option value="" th:selected="${param.prioridade != null && (filtro.prioridade == null || filtro.prioridade == '')}">Todas</option>
+                        <option value="URGENTE" th:selected="${filtro.prioridade == 'URGENTE'}">Urgente</option>
+                        <option value="ALTA" th:selected="${filtro.prioridade == 'ALTA'}">Alta</option>
+                        <option value="MEDIA" th:selected="${filtro.prioridade == 'MEDIA'}">Média</option>
+                        <option value="BAIXA" th:selected="${filtro.prioridade == 'BAIXA'}">Baixa</option>
+                    </select>
+
+                    <select id="periodoSelect"
+                            aria-label="Período"
+                            class="py-2 px-3 rounded-lg border border-slate-300 dark:border-slate-700 text-sm bg-white dark:bg-slate-950">
+                        <option value="">Todo o período</option>
+                        <option value="7">Últimos 7 dias</option>
+                        <option value="30">Últimos 30 dias</option>
+                        <option value="180">Último semestre</option>
+                    </select>
+
+                    <a href="/chamados" id="clear" class="py-2 px-3 text-sm text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white">
+                        Limpar
+                    </a>
+                </div>
+            </form>
+
+            <!-- Tabela -->
+            <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden">
+                <div id="tableWrap"
+                     class="overflow-x-auto"
+                     th:classappend="${#lists.isEmpty(chamados)} ? 'hidden' : ''">
+                    <table class="w-full text-sm">
+                        <caption class="sr-only">Lista de chamados</caption>
+                        <thead class="bg-slate-50 dark:bg-slate-800/70 text-slate-500 dark:text-slate-400 text-xs">
+                        <tr>
+                            <th class="px-4 py-3 text-left font-medium">Chamado</th>
+                            <th class="px-3 py-3 text-left font-medium">Status</th>
+                            <th class="px-3 py-3 text-left font-medium">Prioridade</th>
+                            <th class="px-3 py-3 text-left font-medium">Responsável</th>
+                            <th class="px-3 py-3 text-left font-medium">Atualizado</th>
+                            <th class="px-3 py-3 text-right font-medium"><span class="sr-only">Ações</span></th>
+                        </tr>
+                        </thead>
+                        <tbody id="rows" class="divide-y divide-slate-100 dark:divide-slate-800">
+                        <tr th:each="chamado : ${chamados}"
+                            th:attr="data-href=@{/chamados/detalhes/{id}(id=${chamado.id})}, data-id=${chamado.id}, data-status=${chamado.status}"
+                            onclick="if(!event.target.closest('a,button,input,details')) window.location.href=this.dataset.href"
+                            class="hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer">
+                            <td class="px-4 py-3">
+                                <div class="font-medium text-slate-900 dark:text-slate-100" th:text="${chamado.titulo}">Título</div>
+                                <div class="text-xs text-slate-500 dark:text-slate-400">
+                                    <span th:text="'#' + ${chamado.id}">#1</span> · <span th:text="${chamado.categoria}">Categoria</span>
+                                </div>
+                            </td>
+                            <td class="px-3 py-3" th:switch="${chamado.status}">
+                                <span th:case="'ABERTO'" class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium ring-1 ring-inset bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 ring-blue-200 dark:ring-blue-800">Aberto</span>
+                                <span th:case="'EM_ANALISE'" class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium ring-1 ring-inset bg-amber-50 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 ring-amber-200 dark:ring-amber-800">Em análise</span>
+                                <span th:case="'CONCLUIDO'" class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium ring-1 ring-inset bg-green-50 dark:bg-green-950/60 text-green-700 dark:text-green-300 ring-green-200 dark:ring-green-800">Concluído</span>
+                                <span th:case="'CANCELADO'" class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium ring-1 ring-inset bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 ring-slate-200 dark:ring-slate-700">Cancelado</span>
+                                <span th:case="*" class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium ring-1 ring-inset bg-slate-100 text-slate-600 ring-slate-200" th:text="${chamado.status}">Status</span>
+                            </td>
+                            <td class="px-3 py-3" th:switch="${chamado.prioridade}">
+                                <span th:case="'URGENTE'" class="inline-flex items-center gap-1.5 text-slate-700 dark:text-slate-200">
+                                    <span class="w-2 h-2 rounded-full bg-red-600" aria-hidden="true"></span>Urgente
+                                </span>
+                                <span th:case="'ALTA'" class="inline-flex items-center gap-1.5 text-slate-700 dark:text-slate-200">
+                                    <span class="w-2 h-2 rounded-full bg-orange-500" aria-hidden="true"></span>Alta
+                                </span>
+                                <span th:case="'MEDIA'" class="inline-flex items-center gap-1.5 text-slate-700 dark:text-slate-200">
+                                    <span class="w-2 h-2 rounded-full bg-yellow-500" aria-hidden="true"></span>Média
+                                </span>
+                                <span th:case="'BAIXA'" class="inline-flex items-center gap-1.5 text-slate-700 dark:text-slate-200">
+                                    <span class="w-2 h-2 rounded-full bg-slate-400" aria-hidden="true"></span>Baixa
+                                </span>
+                                <span th:case="*" th:text="${chamado.prioridade}">Prioridade</span>
+                            </td>
+                            <td class="px-3 py-3 text-slate-700 dark:text-slate-300" th:text="${chamado.responsavel}">Responsável</td>
+                            <td class="px-3 py-3 text-slate-500 dark:text-slate-400 whitespace-nowrap tempo-relativo"
+                                th:attr="data-iso=${chamado.dataAtualizacao}, title=${chamado.dataAtualizacao != null ? #temporals.format(chamado.dataAtualizacao, 'dd/MM/yyyy') : ''}"
+                                th:text="${chamado.dataAtualizacao != null ? #temporals.format(chamado.dataAtualizacao, 'dd/MM/yyyy') : '-'}">
+                                há 2 dias
+                            </td>
+                            <td class="px-3 py-3 text-right">
+                                <details class="relative inline-block text-left">
+                                    <summary class="list-none cursor-pointer p-1.5 rounded-md hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400"
+                                             th:attr="aria-label='Ações do chamado #' + ${chamado.id}">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                                            <circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/>
+                                        </svg>
+                                    </summary>
+                                    <div class="absolute right-0 mt-1 w-44 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg p-1 z-10 text-sm">
+                                        <a th:href="@{/chamados/detalhes/{id}(id=${chamado.id})}"
+                                           class="block w-full text-left px-3 py-2 rounded hover:bg-slate-100 dark:hover:bg-slate-700">Ver detalhes</a>
+                                        <a th:href="@{/chamados/editar/{id}(id=${chamado.id})}"
+                                           class="block w-full text-left px-3 py-2 rounded hover:bg-slate-100 dark:hover:bg-slate-700">Editar</a>
+                                        <a th:href="@{/chamados/status/{id}(id=${chamado.id})}"
+                                           class="block w-full text-left px-3 py-2 rounded hover:bg-slate-100 dark:hover:bg-slate-700">Alterar status</a>
+                                        <div class="my-1 border-t border-slate-100 dark:border-slate-700"></div>
+                                        <button type="button"
+                                                th:attr="data-id=${chamado.id}"
+                                                onclick="askDel(this.dataset.id)"
+                                                class="w-full text-left px-3 py-2 rounded hover:bg-red-50 dark:hover:bg-red-950/40 text-red-600 dark:text-red-400">
+                                            Excluir
+                                        </button>
+                                    </div>
+                                </details>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div id="empty"
+                     th:classappend="${!#lists.isEmpty(chamados)} ? 'hidden' : ''"
+                     class="p-10 text-center">
+                    <div class="mx-auto w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 grid place-items-center text-slate-400 mb-3">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                            <circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>
+                        </svg>
+                    </div>
+                    <p class="font-medium">Nenhum chamado encontrado</p>
+                    <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">
+                        Ajuste os filtros ou <a href="/chamados" class="text-blue-600 dark:text-blue-400 hover:underline">limpe a busca</a>.
+                    </p>
+                </div>
+
+                <div class="flex items-center justify-between px-4 py-3 border-t border-slate-100 dark:border-slate-800 text-xs text-slate-500 dark:text-slate-400">
+                    <span id="countLabel"
+                          th:with="inicioIdx=${pagina.totalElements == 0 ? 0 : (pagina.number * pagina.size + 1)},
+                                   fimIdx=${pagina.number * pagina.size + #lists.size(chamados)}"
+                          th:text="${pagina.totalElements == 0} ? 'Mostrando 0 de 0' : 'Mostrando ' + ${inicioIdx} + '–' + ${fimIdx} + ' de ' + ${pagina.totalElements} + ' · Página ' + (${pagina.number} + 1) + ' de ' + ${pagina.totalPages}">
+                        Mostrando 0 de 0
+                    </span>
+                    <div class="flex gap-1">
+                        <button type="button"
+                                id="btnPrev"
+                                th:disabled="${!pagina.hasPrevious()}"
+                                th:attr="data-page=${pagina.number - 1}"
+                                class="px-2 py-1 rounded border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-40 disabled:pointer-events-none">
+                            Anterior
+                        </button>
+                        <button type="button"
+                                id="btnNext"
+                                th:disabled="${!pagina.hasNext()}"
+                                th:attr="data-page=${pagina.number + 1}"
+                                class="px-2 py-1 rounded border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-40 disabled:pointer-events-none">
+                            Próxima
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+</section>
+
+<dialog id="delDlg" class="rounded-xl p-0 w-[min(92vw,400px)] bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 border border-slate-200 dark:border-slate-800 backdrop:bg-slate-900/50">
+    <form id="delForm" method="post" class="p-5">
+        <h2 class="font-semibold">Excluir chamado <span id="delId"></span>?</h2>
+        <p class="text-sm text-slate-600 dark:text-slate-400 mt-2">
+            Essa ação não pode ser desfeita. Se o chamado foi aberto por engano, prefira <b>Cancelar chamado</b> para manter o histórico.
+        </p>
+        <div class="flex justify-end gap-2 mt-5">
+            <button type="button" onclick="document.getElementById('delDlg').close()"
+                    class="px-4 py-2 rounded-lg text-sm hover:bg-slate-100 dark:hover:bg-slate-800">Voltar</button>
+            <button type="submit"
+                    class="px-4 py-2 rounded-lg text-sm bg-red-600 hover:bg-red-500 text-white font-medium">Excluir</button>
+        </div>
+    </form>
+</dialog>
+
+<script>
+    const filtroForm = document.getElementById('filtroForm');
+    const statusInput = document.getElementById('statusInput');
+    const qInput = document.getElementById('q');
+    const inicioInput = document.getElementById('inicioInput');
+    const fimInput = document.getElementById('fimInput');
+    const periodoSelect = document.getElementById('periodoSelect');
+
+    function irParaPagina(novaPagina) {
+        if (novaPagina < 0) return;
+        const params = new URLSearchParams(window.location.search);
+        params.set('page', String(novaPagina));
+        window.location.href = '/chamados?' + params.toString();
+    }
+
+    document.getElementById('btnPrev')?.addEventListener('click', function () {
+        irParaPagina(Number(this.dataset.page));
+    });
+
+    document.getElementById('btnNext')?.addEventListener('click', function () {
+        irParaPagina(Number(this.dataset.page));
+    });
+
+    document.querySelectorAll('#statusSeg .seg').forEach(b => {
+        b.addEventListener('click', () => {
+            const novoStatus = b.dataset.s;
+            if (novoStatus) {
+                statusInput.name = 'status';
+                statusInput.value = novoStatus;
+            } else {
+                statusInput.value = '';
+                statusInput.removeAttribute('name');
+            }
+            filtroForm.submit();
+        });
+    });
+
+    async function atualizarContadoresAbas() {
+        const precisaBuscarTodos = Boolean(statusInput.value) || Boolean(document.getElementById('btnNext') && !document.getElementById('btnNext').disabled) || Boolean(document.getElementById('btnPrev') && !document.getElementById('btnPrev').disabled);
+        if (!precisaBuscarTodos) return;
+
+        const params = new URLSearchParams(window.location.search);
+        params.delete('status');
+        params.set('page', '0');
+        params.set('size', '100');
+        const urlSemStatus = '/chamados?' + params.toString();
+        const resp = await fetch(urlSemStatus);
+        const html = await resp.text();
+        const doc = new DOMParser().parseFromString(html, 'text/html');
+        const linhas = Array.from(doc.querySelectorAll('#rows tr[data-status]'));
+
+        const totais = {
+            '': linhas.length,
+            'ABERTO': linhas.filter(tr => tr.dataset.status === 'ABERTO').length,
+            'EM_ANALISE': linhas.filter(tr => tr.dataset.status === 'EM_ANALISE').length,
+            'CONCLUIDO': linhas.filter(tr => tr.dataset.status === 'CONCLUIDO').length,
+            'CANCELADO': linhas.filter(tr => tr.dataset.status === 'CANCELADO').length
+        };
+
+        document.querySelectorAll('.status-count').forEach(span => {
+            const chave = span.dataset.countFor ?? '';
+            if (chave in totais) {
+                span.textContent = totais[chave];
+            }
+        });
+    }
+    atualizarContadoresAbas();
+
+    function formatarTemposRelativos(escopo = document) {
+        escopo.querySelectorAll('.tempo-relativo').forEach(el => {
+            const iso = el.dataset.iso;
+            if (!iso) return;
+            const data = new Date(iso + 'T00:00:00');
+            const hoje = new Date();
+            hoje.setHours(0, 0, 0, 0);
+            const dias = Math.round((hoje - data) / 86400000);
+            if (dias <= 0) el.textContent = 'hoje';
+            else if (dias === 1) el.textContent = 'há 1 dia';
+            else el.textContent = `há ${dias} dias`;
+        });
+    }
+
+    function executarBusca() {
+        const valor = qInput.value.trim();
+        if (valor) {
+            qInput.name = 'busca';
+        } else {
+            qInput.removeAttribute('name');
+        }
+        filtroForm.submit();
+    }
+
+    if (qInput.value) {
+        qInput.focus();
+        const fimTexto = qInput.value.length;
+        qInput.setSelectionRange(fimTexto, fimTexto);
+    }
+
+    let buscaTimer;
+    qInput.addEventListener('input', () => {
+        clearTimeout(buscaTimer);
+        buscaTimer = setTimeout(executarBusca, 800);
+    });
+
+    qInput.addEventListener('keydown', e => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            clearTimeout(buscaTimer);
+            executarBusca();
+        }
+    });
+
+    function formatIsoLocal(date) {
+        const y = date.getFullYear();
+        const m = String(date.getMonth() + 1).padStart(2, '0');
+        const d = String(date.getDate()).padStart(2, '0');
+        return `${y}-${m}-${d}`;
+    }
+
+    if (inicioInput.value) {
+        const hoje = new Date();
+        hoje.setHours(0, 0, 0, 0);
+        const diffDias = Math.round((hoje - new Date(inicioInput.value + 'T00:00:00')) / 86400000);
+        if (diffDias <= 8) periodoSelect.value = '7';
+        else if (diffDias <= 32) periodoSelect.value = '30';
+        else periodoSelect.value = '180';
+    }
+
+    periodoSelect.addEventListener('change', () => {
+        const dias = Number(periodoSelect.value);
+        if (!dias) {
+            inicioInput.value = '';
+            fimInput.value = '';
+            inicioInput.removeAttribute('name');
+            fimInput.removeAttribute('name');
+        } else {
+            const hoje = new Date();
+            const inicio = new Date();
+            inicio.setDate(hoje.getDate() - dias);
+            inicioInput.name = 'inicio';
+            fimInput.name = 'fim';
+            inicioInput.value = formatIsoLocal(inicio);
+            fimInput.value = formatIsoLocal(hoje);
+        }
+        filtroForm.submit();
+    });
+
+    formatarTemposRelativos();
+
+    document.addEventListener('click', e => {
+        const clicked = e.target.closest('details');
+        document.querySelectorAll('details[open]').forEach(d => {
+            if (d !== clicked) d.open = false;
+        });
+    });
+
+    const dlg = document.getElementById('delDlg');
+    function askDel(id) {
+        document.getElementById('delId').textContent = '#' + id;
+        document.getElementById('delForm').action = '/chamados/excluir/' + id;
+        document.querySelectorAll('details[open]').forEach(d => d.open = false);
+        dlg.showModal();
+    }
+</script>
+</body>
+</html>

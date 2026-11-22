@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: headTailwind('Indicadores | Gestão de Chamados Acadêmicos')}"></head>
+<body class="bg-slate-100 dark:bg-slate-950 text-slate-900 dark:text-slate-100 min-h-screen">
+
+<header th:replace="~{fragments/layout :: cabecalhoModerno('indicadores')}"></header>
+
+<main class="max-w-6xl mx-auto px-4 py-6 space-y-5">
+    <div th:replace="~{fragments/layout :: mensagensModernas}"></div>
+
+    <!-- Cabeçalho e filtro de período -->
+    <div class="flex flex-wrap items-end justify-between gap-4">
+        <div>
+            <h1 class="text-xl font-semibold">Indicadores de atendimento</h1>
+            <p class="text-sm text-slate-600 dark:text-slate-400 mt-1">
+                Acompanhe o volume de solicitações, distribuição por status e taxa de resolução.
+            </p>
+        </div>
+
+        <form id="indForm" method="get" action="/indicadores" class="flex flex-wrap items-center gap-2">
+            <input type="hidden" id="indInicio" name="inicio" th:value="${filtro != null ? filtro.inicio : param.inicio}" />
+            <input type="hidden" id="indFim" name="fim" th:value="${filtro != null ? filtro.fim : param.fim}" />
+
+            <div role="group" aria-label="Período" class="flex flex-wrap gap-2 text-sm">
+                <button type="button"
+                        data-days="7"
+                        class="preset-ind px-3.5 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 font-medium transition">
+                    7 dias
+                </button>
+                <button type="button"
+                        data-days="30"
+                        class="preset-ind px-3.5 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 font-medium transition">
+                    30 dias
+                </button>
+                <button type="button"
+                        data-days="180"
+                        class="preset-ind px-3.5 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 font-medium transition">
+                    Semestre
+                </button>
+                <button type="button"
+                        data-days=""
+                        class="preset-ind px-3.5 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 font-medium transition">
+                    Todos
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Cards de KPIs -->
+    <section class="grid grid-cols-2 lg:grid-cols-3 gap-4">
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5">
+            <div class="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Total de chamados</div>
+            <div class="text-3xl font-semibold mt-2 tabular-nums"
+                 th:text="${indicadores != null ? indicadores.total : 0}">0</div>
+            <div class="text-xs text-slate-500 dark:text-slate-400 mt-1">Solicitações registradas no recorte</div>
+        </div>
+
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5">
+            <div class="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Abertos</div>
+            <div class="text-3xl font-semibold mt-2 text-blue-600 dark:text-blue-400 tabular-nums"
+                 th:text="${indicadores != null ? indicadores.abertos : 0}">0</div>
+            <div class="text-xs text-slate-500 dark:text-slate-400 mt-1">Aguardando início de triagem</div>
+        </div>
+
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5">
+            <div class="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Em análise</div>
+            <div class="text-3xl font-semibold mt-2 text-amber-600 dark:text-amber-400 tabular-nums"
+                 th:text="${indicadores != null ? indicadores.emAnalise : 0}">0</div>
+            <div class="text-xs text-slate-500 dark:text-slate-400 mt-1">Em atendimento pelas equipes</div>
+        </div>
+
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5">
+            <div class="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Concluídos</div>
+            <div class="text-3xl font-semibold mt-2 text-emerald-600 dark:text-emerald-400 tabular-nums"
+                 th:text="${indicadores != null ? indicadores.concluidos : 0}">0</div>
+            <div class="text-xs text-slate-500 dark:text-slate-400 mt-1">Solicitações finalizadas com sucesso</div>
+        </div>
+
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5">
+            <div class="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Alta / Urgente</div>
+            <div class="text-3xl font-semibold mt-2 text-red-600 dark:text-red-400 tabular-nums"
+                 th:text="${indicadores != null ? indicadores.altaPrioridade : 0}">0</div>
+            <div class="text-xs text-slate-500 dark:text-slate-400 mt-1">Chamados prioritários</div>
+        </div>
+
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5">
+            <div class="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Taxa de conclusão</div>
+            <div class="text-3xl font-semibold mt-2 tabular-nums"
+                 th:text="${indicadores != null ? #numbers.formatDecimal(indicadores.percentualConcluido, 1, 0) + '%' : '0%'}">0%</div>
+            <div class="w-full h-2 rounded-full bg-slate-100 dark:bg-slate-800 mt-2.5 overflow-hidden">
+                <div class="h-full rounded-full bg-emerald-600"
+                     th:style="'width:' + ${indicadores != null ? indicadores.percentualConcluido : 0} + '%'"></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Distribuição por status -->
+    <section class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 space-y-4">
+        <div class="flex items-center justify-between">
+            <h2 class="text-base font-semibold">Distribuição por status</h2>
+            <a href="/relatorios" class="text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline">
+                Ver relatórios detalhados
+            </a>
+        </div>
+
+        <div id="statusBars" class="space-y-3"></div>
+    </section>
+</main>
+
+<script th:inline="javascript">
+    const indicadores = /*[[${indicadores}]]*/ null || {
+        total: 0, abertos: 0, emAnalise: 0, concluidos: 0, cancelados: 0, altaPrioridade: 0, percentualConcluido: 0
+    };
+
+    const indForm = document.getElementById('indForm');
+    const inicioEl = document.getElementById('indInicio');
+    const fimEl = document.getElementById('indFim');
+    const botoesPeriodo = document.querySelectorAll('.preset-ind');
+
+    const classesPeriodoAtivo = ['border-blue-600', 'ring-1', 'ring-blue-600', 'bg-blue-50/70', 'text-blue-700', 'dark:border-blue-500', 'dark:ring-blue-500', 'dark:bg-blue-950/40', 'dark:text-blue-300'];
+    const classesPeriodoInativo = ['border-slate-300', 'dark:border-slate-700', 'bg-white', 'dark:bg-slate-900'];
+
+    function destacarPeriodo(daysVal) {
+        botoesPeriodo.forEach(btn => {
+            const ativo = btn.dataset.days === String(daysVal);
+            btn.setAttribute('aria-pressed', String(ativo));
+            btn.classList.remove(...(ativo ? classesPeriodoInativo : classesPeriodoAtivo));
+            btn.classList.add(...(ativo ? classesPeriodoAtivo : classesPeriodoInativo));
+        });
+    }
+
+    function formatIsoLocal(date) {
+        const y = date.getFullYear();
+        const m = String(date.getMonth() + 1).padStart(2, '0');
+        const d = String(date.getDate()).padStart(2, '0');
+        return `${y}-${m}-${d}`;
+    }
+
+    const inicioValor = inicioEl.value || new URLSearchParams(window.location.search).get('inicio') || '';
+    if (inicioValor) {
+        const hoje = new Date();
+        hoje.setHours(0, 0, 0, 0);
+        const diffDias = Math.round((hoje - new Date(inicioValor + 'T00:00:00')) / 86400000);
+        if (diffDias <= 8) destacarPeriodo('7');
+        else if (diffDias <= 32) destacarPeriodo('30');
+        else destacarPeriodo('180');
+    } else {
+        destacarPeriodo('');
+    }
+
+    botoesPeriodo.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const daysVal = btn.dataset.days;
+            destacarPeriodo(daysVal);
+
+            const dias = Number(daysVal);
+            if (!dias) {
+                inicioEl.value = '';
+                fimEl.value = '';
+            } else {
+                const hoje = new Date();
+                const inicio = new Date();
+                inicio.setDate(hoje.getDate() - dias);
+                inicioEl.value = formatIsoLocal(inicio);
+                fimEl.value = formatIsoLocal(hoje);
+            }
+            indForm.submit();
+        });
+    });
+
+    const total = Math.max(Number(indicadores.total) || 0, 1);
+    const itensStatus = [
+        { nome: 'Abertos', qtd: Number(indicadores.abertos) || 0, cor: 'bg-blue-600' },
+        { nome: 'Em análise', qtd: Number(indicadores.emAnalise) || 0, cor: 'bg-amber-500' },
+        { nome: 'Concluídos', qtd: Number(indicadores.concluidos) || 0, cor: 'bg-emerald-600' },
+        { nome: 'Cancelados', qtd: Number(indicadores.cancelados) || 0, cor: 'bg-slate-400' }
+    ];
+
+    document.getElementById('statusBars').innerHTML = itensStatus.map(item => {
+        const pct = indicadores.total > 0 ? Math.round((item.qtd / total) * 100) : 0;
+        return `
+            <div>
+                <div class="flex justify-between text-sm mb-1">
+                    <span class="font-medium">${item.nome}</span>
+                    <span class="tabular-nums text-slate-600 dark:text-slate-300">${item.qtd} · ${pct}%</span>
+                </div>
+                <div class="h-2.5 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
+                    <div class="h-full rounded-full ${item.cor}" style="width: ${pct}%"></div>
+                </div>
+            </div>`;
+    }).join('');
+</script>
+</body>
+</html>

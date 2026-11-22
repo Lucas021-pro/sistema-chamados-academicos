@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: headTailwind('Editar Chamado | Gestão de Chamados Acadêmicos')}"></head>
+<body class="min-h-screen bg-slate-100 dark:bg-slate-950 text-slate-900 dark:text-slate-100">
+
+<header th:replace="~{fragments/layout :: cabecalhoModerno('chamados')}"></header>
+
+<main class="max-w-5xl mx-auto px-4 py-7">
+    <div class="mb-5 flex flex-wrap items-end justify-between gap-3">
+        <div>
+            <h1 class="text-2xl font-semibold tracking-tight">
+                Editar chamado <span class="text-slate-500 dark:text-slate-400" th:text="'#' + ${chamadoId}">#4</span>
+            </h1>
+            <p class="text-sm text-slate-600 dark:text-slate-400 mt-1">
+                Atualize os dados da solicitação. As alterações ficam registradas no histórico.
+            </p>
+        </div>
+        <a href="/chamados"
+           class="px-3.5 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-sm font-medium">
+            Voltar para a lista
+        </a>
+    </div>
+
+    <div th:replace="~{fragments/layout :: mensagensModernas}"></div>
+
+    <div class="grid lg:grid-cols-[minmax(0,1fr)_280px] gap-5 items-start">
+        <form id="editForm"
+              th:action="@{/chamados/atualizar/{id}(id=${chamadoId})}"
+              th:object="${chamadoEdicaoDTO}"
+              method="post"
+              class="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 sm:p-6">
+
+            <div class="flex flex-wrap items-start justify-between gap-3 pb-4 border-b border-slate-100 dark:border-slate-800">
+                <div>
+                    <h2 class="font-semibold">Dados do chamado</h2>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-1" th:text="'Identificador #' + ${chamadoId}">Identificador #4</p>
+                </div>
+                <span class="text-xs text-slate-500 dark:text-slate-400">
+                    Campos com <span class="text-red-600">*</span> são obrigatórios
+                </span>
+            </div>
+
+            <div class="mt-5">
+                <label for="title" class="block text-sm font-medium mb-1.5">
+                    Título <span class="text-red-600">*</span>
+                </label>
+                <input id="title"
+                       th:field="*{titulo}"
+                       required
+                       maxlength="120"
+                       class="field w-full h-10 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 text-sm" />
+                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Use um resumo objetivo do pedido.</p>
+                <p th:if="${#fields.hasErrors('titulo')}" th:errors="*{titulo}" class="text-xs text-red-600 dark:text-red-400 mt-1"></p>
+            </div>
+
+            <div class="grid sm:grid-cols-2 gap-4 mt-4">
+                <div>
+                    <label for="category" class="block text-sm font-medium mb-1.5">
+                        Categoria / setor <span class="text-red-600">*</span>
+                    </label>
+                    <select id="category"
+                            th:field="*{categoria}"
+                            class="field w-full h-10 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 text-sm">
+                        <option value="Matrícula">Matrícula</option>
+                        <option value="Documentos">Documentos</option>
+                        <option value="Suporte técnico">Suporte técnico</option>
+                        <option value="Atendimento acadêmico">Atendimento acadêmico</option>
+                    </select>
+                    <p th:if="${#fields.hasErrors('categoria')}" th:errors="*{categoria}" class="text-xs text-red-600 dark:text-red-400 mt-1"></p>
+                </div>
+
+                <div>
+                    <label for="priority" class="block text-sm font-medium mb-1.5">
+                        Prioridade <span class="text-red-600">*</span>
+                    </label>
+                    <select id="priority"
+                            th:field="*{prioridade}"
+                            class="field w-full h-10 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 text-sm">
+                        <option value="ALTA">Alta</option>
+                        <option value="MEDIA">Média</option>
+                        <option value="BAIXA">Baixa</option>
+                        <option value="URGENTE">Urgente</option>
+                    </select>
+                    <p th:if="${#fields.hasErrors('prioridade')}" th:errors="*{prioridade}" class="text-xs text-red-600 dark:text-red-400 mt-1"></p>
+                </div>
+            </div>
+
+            <div class="mt-4">
+                <label for="owner" class="block text-sm font-medium mb-1.5">
+                    Responsável / equipe <span class="text-red-600">*</span>
+                </label>
+                <select id="owner"
+                        th:field="*{responsavel}"
+                        class="field w-full h-10 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 text-sm">
+                    <option value="Coordenação de Curso">Coordenação de Curso</option>
+                    <option value="Secretaria Acadêmica">Secretaria Acadêmica</option>
+                    <option value="Equipe de TI">Equipe de TI</option>
+                    <option value="Atendimento Geral">Atendimento Geral</option>
+                    <option value="Atendimento Acadêmico">Atendimento Acadêmico</option>
+                </select>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                    A equipe recebe uma notificação se o responsável mudar.
+                </p>
+                <p th:if="${#fields.hasErrors('responsavel')}" th:errors="*{responsavel}" class="text-xs text-red-600 dark:text-red-400 mt-1"></p>
+            </div>
+
+            <div class="mt-4">
+                <div class="flex justify-between items-center gap-2 mb-1.5">
+                    <label for="description" class="text-sm font-medium">
+                        Descrição da solicitação <span class="text-red-600">*</span>
+                    </label>
+                    <span id="descCount" class="text-xs text-slate-500 dark:text-slate-400">0/500</span>
+                </div>
+                <textarea id="description"
+                          th:field="*{descricao}"
+                          required
+                          maxlength="500"
+                          rows="5"
+                          class="field w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 py-2.5 text-sm"></textarea>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                    A descrição original é preservada no histórico quando alterada.
+                </p>
+                <p th:if="${#fields.hasErrors('descricao')}" th:errors="*{descricao}" class="text-xs text-red-600 dark:text-red-400 mt-1"></p>
+            </div>
+
+            <div class="flex flex-wrap justify-between items-center gap-3 border-t border-slate-100 dark:border-slate-800 mt-5 pt-4">
+                <span class="text-xs text-slate-500 dark:text-slate-400">Alterações auditadas no histórico</span>
+                <div class="flex gap-2 ml-auto">
+                    <a th:href="@{/chamados/detalhes/{id}(id=${chamadoId})}"
+                       class="px-4 py-2 rounded-lg text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800">
+                        Cancelar
+                    </a>
+                    <button type="submit"
+                            class="px-4 py-2 rounded-lg text-sm font-semibold bg-blue-600 hover:bg-blue-700 text-white">
+                        Salvar alterações
+                    </button>
+                </div>
+            </div>
+        </form>
+
+        <!-- Barra lateral -->
+        <aside class="space-y-4">
+            <div class="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
+                <h2 class="text-sm font-semibold">Resumo atual</h2>
+                <dl class="mt-3 space-y-3 text-sm">
+                    <div class="flex justify-between gap-3">
+                        <dt class="text-slate-500 dark:text-slate-400">Categoria</dt>
+                        <dd class="font-medium text-right" th:text="${chamadoEdicaoDTO.categoria}">Categoria</dd>
+                    </div>
+                    <div class="flex justify-between gap-3">
+                        <dt class="text-slate-500 dark:text-slate-400">Prioridade</dt>
+                        <dd class="font-medium" th:switch="${chamadoEdicaoDTO.prioridade}">
+                            <span th:case="'URGENTE'">Urgente</span>
+                            <span th:case="'ALTA'">Alta</span>
+                            <span th:case="'MEDIA'">Média</span>
+                            <span th:case="'BAIXA'">Baixa</span>
+                        </dd>
+                    </div>
+                    <div class="flex justify-between gap-3">
+                        <dt class="text-slate-500 dark:text-slate-400">Responsável</dt>
+                        <dd class="font-medium text-right" th:text="${chamadoEdicaoDTO.responsavel}">Responsável</dd>
+                    </div>
+                </dl>
+                <p class="border-t border-slate-100 dark:border-slate-800 mt-3 pt-3 text-xs text-slate-500 dark:text-slate-400">
+                    Editar os dados não altera o status. Use “Atualizar status” para mudar a etapa.
+                </p>
+                <a th:href="@{/chamados/status/{id}(id=${chamadoId})}"
+                   class="block text-center mt-3 w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-800">
+                    Atualizar status
+                </a>
+            </div>
+
+            <div class="rounded-xl border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/40 p-4">
+                <h2 class="text-sm font-semibold text-amber-900 dark:text-amber-300">Atenção ao alterar</h2>
+                <p class="mt-1 text-xs leading-relaxed text-amber-900 dark:text-amber-200">
+                    Mudanças de categoria podem alterar a equipe responsável. Mudanças de prioridade devem incluir uma justificativa.
+                </p>
+            </div>
+        </aside>
+    </div>
+</main>
+
+<script>
+    const description = document.getElementById('description');
+    const descCount = document.getElementById('descCount');
+    function updateDesc() {
+        descCount.textContent = `${description.value.length}/500`;
+    }
+    description.addEventListener('input', updateDesc);
+    updateDesc();
+</script>
+</body>
+</html>

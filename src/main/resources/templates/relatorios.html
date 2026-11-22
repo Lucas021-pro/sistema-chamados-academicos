@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: headTailwind('Relatórios | Gestão de Chamados Acadêmicos')}"></head>
+<body class="bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 min-h-screen">
+
+<header th:replace="~{fragments/layout :: cabecalhoModerno('relatorios')}"></header>
+
+<main class="max-w-6xl mx-auto px-4 py-6 space-y-5">
+    <div th:replace="~{fragments/layout :: mensagensModernas}"></div>
+
+    <section class="flex flex-wrap items-end gap-4 justify-between">
+        <div>
+            <h1 class="text-xl font-semibold">Relatórios e exportações</h1>
+            <p class="text-sm text-slate-600 dark:text-slate-400 mt-1"
+               th:text="${#lists.size(chamados)} + ' registro(s) no recorte atual'">
+                0 registros no recorte atual
+            </p>
+        </div>
+
+        <details class="relative">
+            <summary class="list-none cursor-pointer inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-500">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <path d="M12 3v12m0 0l-4-4m4 4l4-4M4 21h16"/>
+                </svg>
+                Exportar
+            </summary>
+            <div class="absolute right-0 mt-2 w-56 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg p-1 z-10 text-sm">
+                <a id="expPdf" href="/relatorios/exportar/pdf" class="block w-full text-left px-3 py-2 rounded hover:bg-slate-100 dark:hover:bg-slate-700">
+                    PDF <span class="text-slate-500 dark:text-slate-400">· relatório tabulado</span>
+                </a>
+                <a id="expExcel" href="/relatorios/exportar/excel" class="block w-full text-left px-3 py-2 rounded hover:bg-slate-100 dark:hover:bg-slate-700">
+                    Excel <span class="text-slate-500 dark:text-slate-400">· .xlsx</span>
+                </a>
+                <a id="expCsv" href="/relatorios/exportar/csv" class="block w-full text-left px-3 py-2 rounded hover:bg-slate-100 dark:hover:bg-slate-700">
+                    CSV <span class="text-slate-500 dark:text-slate-400">· dados brutos</span>
+                </a>
+            </div>
+        </details>
+    </section>
+
+    <form id="relForm" method="get" action="/relatorios"
+          class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 space-y-3">
+        <input type="hidden" id="relInicio" th:name="${filtro.inicio != null ? 'inicio' : null}" th:value="${filtro.inicio}" />
+        <input type="hidden" id="relFim" th:name="${filtro.fim != null ? 'fim' : null}" th:value="${filtro.fim}" />
+
+        <div class="flex flex-wrap gap-2 items-center">
+            <label class="relative flex-1 min-w-[200px]">
+                <span class="sr-only">Buscar no título ou descrição</span>
+                <svg class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/>
+                </svg>
+                <input id="search"
+                       th:name="${(filtro.busca != null && !#strings.isEmpty(filtro.busca)) ? 'busca' : null}"
+                       type="search"
+                       th:value="${filtro.busca}"
+                       placeholder="Buscar por título, descrição ou #ID"
+                       class="w-full pl-9 pr-3 py-2 text-sm border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            </label>
+
+            <select id="statusSel"
+                    th:name="${param.status != null ? 'status' : null}"
+                    aria-label="Status"
+                    onchange="this.name='status'; this.form.submit()"
+                    class="py-2 px-3 text-sm border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-950">
+                <option value="" hidden th:selected="${param.status == null}">Status</option>
+                <option value="" th:selected="${param.status != null && (filtro.status == null || filtro.status == '')}">Todos</option>
+                <option value="ABERTO" th:selected="${filtro.status == 'ABERTO'}">Aberto</option>
+                <option value="EM_ANALISE" th:selected="${filtro.status == 'EM_ANALISE'}">Em análise</option>
+                <option value="CONCLUIDO" th:selected="${filtro.status == 'CONCLUIDO'}">Concluído</option>
+                <option value="CANCELADO" th:selected="${filtro.status == 'CANCELADO'}">Cancelado</option>
+            </select>
+
+            <select id="prioSel"
+                    th:name="${param.prioridade != null ? 'prioridade' : null}"
+                    aria-label="Prioridade"
+                    onchange="this.name='prioridade'; this.form.submit()"
+                    class="py-2 px-3 text-sm border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-950">
+                <option value="" hidden th:selected="${param.prioridade == null}">Prioridade</option>
+                <option value="" th:selected="${param.prioridade != null && (filtro.prioridade == null || filtro.prioridade == '')}">Todas</option>
+                <option value="URGENTE" th:selected="${filtro.prioridade == 'URGENTE'}">Urgente</option>
+                <option value="ALTA" th:selected="${filtro.prioridade == 'ALTA'}">Alta</option>
+                <option value="MEDIA" th:selected="${filtro.prioridade == 'MEDIA'}">Média</option>
+                <option value="BAIXA" th:selected="${filtro.prioridade == 'BAIXA'}">Baixa</option>
+            </select>
+
+            <div role="group" aria-label="Período" class="flex flex-wrap gap-2 text-sm">
+                <button type="button" data-days="7"
+                        class="preset px-3.5 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 font-medium transition">
+                    7 dias
+                </button>
+                <button type="button" data-days="30"
+                        class="preset px-3.5 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 font-medium transition">
+                    30 dias
+                </button>
+                <button type="button" data-days="180"
+                        class="preset px-3.5 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 font-medium transition">
+                    Semestre
+                </button>
+                <button type="button" data-days=""
+                        class="preset px-3.5 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 font-medium transition">
+                    Todos
+                </button>
+            </div>
+        </div>
+
+        <div id="chips" class="flex flex-wrap gap-2 items-center text-xs"></div>
+    </form>
+
+    <section class="relative grid grid-cols-2 lg:grid-cols-5 gap-3">
+        <div id="kpis" class="contents"></div>
+    </section>
+
+    <section class="relative grid lg:grid-cols-3 gap-3">
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 lg:col-span-3">
+            <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+                <h2 class="text-sm font-semibold">Volume por abertura e conclusão</h2>
+                <div class="flex gap-4 text-xs text-slate-600 dark:text-slate-400">
+                    <span class="flex items-center gap-1.5"><span class="w-3 h-0.5 bg-blue-600"></span>Abertos</span>
+                    <span class="flex items-center gap-1.5"><span class="w-3 h-0.5 bg-emerald-600"></span>Concluídos</span>
+                </div>
+            </div>
+            <svg id="line" viewBox="0 0 600 160" class="w-full h-40 overflow-visible" role="img" aria-label="Gráfico de linhas com chamados abertos e concluídos"></svg>
+        </div>
+
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4">
+            <h2 class="text-sm font-semibold mb-3">Por prioridade</h2>
+            <div class="flex items-center gap-4">
+                <div class="relative w-32 h-32 shrink-0">
+                    <svg id="donut" viewBox="0 0 100 100" class="w-full h-full -rotate-90" aria-hidden="true"></svg>
+                    <div class="pointer-events-none absolute inset-0 grid place-items-center text-center">
+                        <div>
+                            <div id="donutTotal" class="text-2xl font-semibold" th:text="${#lists.size(chamados)}">0</div>
+                            <div class="text-[11px] text-slate-500 dark:text-slate-400">chamados</div>
+                        </div>
+                    </div>
+                </div>
+                <ul id="donutLegend" class="text-sm space-y-1.5 flex-1"></ul>
+            </div>
+        </div>
+
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 lg:col-span-2">
+            <h2 class="text-sm font-semibold mb-3">Por categoria</h2>
+            <ul id="bars" class="space-y-3"></ul>
+        </div>
+    </section>
+
+    <section class="relative bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead class="bg-slate-50 dark:bg-slate-800/70 text-xs uppercase tracking-wide text-slate-600 dark:text-slate-400">
+                <tr>
+                    <th class="text-left font-medium px-4 py-3 cursor-pointer select-none" data-sort="id">ID ↕</th>
+                    <th class="text-left font-medium px-4 py-3 cursor-pointer select-none" data-sort="titulo">Título ↕</th>
+                    <th class="text-left font-medium px-4 py-3">Status</th>
+                    <th class="text-left font-medium px-4 py-3 cursor-pointer select-none" data-sort="prioN">Prioridade ↕</th>
+                    <th class="text-left font-medium px-4 py-3">Responsável</th>
+                    <th class="text-left font-medium px-4 py-3 cursor-pointer select-none" data-sort="dataAbertura">Abertura ↕</th>
+                    <th class="px-4 py-3"><span class="sr-only">Ações</span></th>
+                </tr>
+                </thead>
+                <tbody id="tbody" class="divide-y divide-slate-100 dark:divide-slate-800"></tbody>
+            </table>
+        </div>
+
+        <div id="empty" class="hidden p-10 text-center text-sm text-slate-600 dark:text-slate-400">
+            Nenhum chamado encontrado com esses filtros.
+            <a href="/relatorios" class="text-blue-700 dark:text-blue-400 underline">Limpar filtros</a>
+        </div>
+
+        <div class="flex items-center justify-between px-4 py-3 border-t border-slate-100 dark:border-slate-800 text-xs text-slate-600 dark:text-slate-400">
+            <span id="pageInfo"></span>
+            <div class="flex gap-1">
+                <button type="button" id="relPrev" class="px-2 py-1 rounded border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-40 disabled:pointer-events-none">Anterior</button>
+                <button type="button" id="relNext" class="px-2 py-1 rounded border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-40 disabled:pointer-events-none">Próxima</button>
+            </div>
+        </div>
+    </section>
+</main>
+
+<div id="chartTooltip"
+     role="tooltip"
+     class="pointer-events-none fixed z-50 hidden rounded-lg bg-slate-900 text-white px-3 py-2 text-xs shadow-lg border border-slate-700 space-y-1"></div>
+
+<script th:inline="javascript">
+    const urlParams = new URLSearchParams(window.location.search);
+    for (const [k, v] of Array.from(urlParams.entries())) {
+        if (!v) urlParams.delete(k);
+    }
+    const qs = urlParams.toString();
+    const qSuffix = qs ? '?' + qs : '';
+    document.getElementById('expPdf').href = '/relatorios/exportar/pdf' + qSuffix;
+    document.getElementById('expExcel').href = '/relatorios/exportar/excel' + qSuffix;
+    document.getElementById('expCsv').href = '/relatorios/exportar/csv' + qSuffix;
+
+    const rawData = /*[[${chamados}]]*/ [];
+    const indicadores = /*[[${indicadores}]]*/ {
+        total: 0, abertos: 0, emAnalise: 0, concluidos: 0, cancelados: 0, altaPrioridade: 0, percentualConcluido: 0
+    };
+
+    const prioOrder = { URGENTE: 4, ALTA: 3, MEDIA: 2, BAIXA: 1 };
+    const statusText = { ABERTO: 'Aberto', EM_ANALISE: 'Em análise', CONCLUIDO: 'Concluído', CANCELADO: 'Cancelado' };
+    const prioText = { URGENTE: 'Urgente', ALTA: 'Alta', MEDIA: 'Média', BAIXA: 'Baixa' };
+
+    const data = rawData.map(d => ({ ...d, prioN: prioOrder[d.prioridade] || 0 }));
+
+    const statusStyle = {
+        ABERTO: ['bg-blue-50 dark:bg-blue-950/60 text-blue-800 dark:text-blue-300', '●'],
+        EM_ANALISE: ['bg-amber-50 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300', '◐'],
+        CONCLUIDO: ['bg-emerald-50 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300', '✓'],
+        CANCELADO: ['bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300', '✕']
+    };
+    const prioStyle = {
+        URGENTE: ['text-red-700 dark:text-red-400', '⇈'],
+        ALTA: ['text-orange-700 dark:text-orange-400', '↑'],
+        MEDIA: ['text-amber-700 dark:text-amber-400', '='],
+        BAIXA: ['text-blue-700 dark:text-blue-400', '↓']
+    };
+    const initials = s => (s || '').split(' ').filter(w => w.length > 2).slice(0, 2).map(w => w[0]).join('').toUpperCase() || 'AD';
+    const formatDate = iso => {
+        if (!iso) return '—';
+        const p = String(iso).split('-');
+        return p.length === 3 ? `${p[2]}/${p[1]}/${p[0]}` : iso;
+    };
+
+    let sortKey = 'id';
+    let sortDir = -1;
+    let currentPage = 0;
+    const pageSize = 10;
+
+    function renderTabela() {
+        const sorted = [...data].sort((a, b) => {
+            const x = a[sortKey] ?? '';
+            const y = b[sortKey] ?? '';
+            return (x > y ? 1 : x < y ? -1 : 0) * sortDir;
+        });
+
+        const totalPages = Math.max(1, Math.ceil(sorted.length / pageSize));
+        if (currentPage >= totalPages) currentPage = totalPages - 1;
+        const start = currentPage * pageSize;
+        const rows = sorted.slice(start, start + pageSize);
+
+        document.getElementById('tbody').innerHTML = rows.map(d => {
+            const st = statusStyle[d.status] || ['bg-slate-100 text-slate-700', '•'];
+            const pr = prioStyle[d.prioridade] || ['text-slate-700', '•'];
+            return `
+            <tr onclick="if(!event.target.closest('a')) window.location.href='/chamados/detalhes/${d.id}'"
+                class="hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer">
+                <td class="px-4 py-3 text-slate-600 dark:text-slate-400 tabular-nums">#${d.id}</td>
+                <td class="px-4 py-3">
+                    <div class="font-medium">${d.titulo}</div>
+                    <div class="text-xs text-slate-500 dark:text-slate-400">${d.categoria} · aberto em ${formatDate(d.dataAbertura)}</div>
+                </td>
+                <td class="px-4 py-3">
+                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${st[0]}">
+                        <span aria-hidden="true">${st[1]}</span>${statusText[d.status] || d.status}
+                    </span>
+                </td>
+                <td class="px-4 py-3">
+                    <span class="inline-flex items-center gap-1 text-xs font-medium ${pr[0]}">
+                        <span aria-hidden="true">${pr[1]}</span>${prioText[d.prioridade] || d.prioridade}
+                    </span>
+                </td>
+                <td class="px-4 py-3">
+                    <span class="inline-flex items-center gap-2">
+                        <span class="w-6 h-6 rounded-full bg-slate-200 dark:bg-slate-700 text-[10px] font-semibold grid place-items-center">${initials(d.responsavel)}</span>
+                        <span class="text-slate-700 dark:text-slate-300">${d.responsavel}</span>
+                    </span>
+                </td>
+                <td class="px-4 py-3 text-xs text-slate-600 dark:text-slate-400">${formatDate(d.dataAbertura)}</td>
+                <td class="px-4 py-3 text-right">
+                    <a href="/chamados/detalhes/${d.id}" class="text-blue-700 dark:text-blue-400 font-medium text-xs hover:underline">
+                        Abrir<span class="sr-only"> chamado #${d.id}</span>
+                    </a>
+                </td>
+            </tr>`;
+        }).join('');
+
+        document.getElementById('empty').classList.toggle('hidden', sorted.length > 0);
+        document.getElementById('pageInfo').textContent = sorted.length
+            ? `Mostrando ${start + 1}–${Math.min(start + pageSize, sorted.length)} de ${sorted.length} · Página ${currentPage + 1} de ${totalPages}`
+            : '0 resultados';
+
+        document.getElementById('relPrev').disabled = currentPage <= 0;
+        document.getElementById('relNext').disabled = currentPage >= totalPages - 1;
+    }
+
+    const searchEl = document.getElementById('search');
+    const statusEl = document.getElementById('statusSel');
+    const prioEl = document.getElementById('prioSel');
+    const inicioEl = document.getElementById('relInicio');
+    const fimEl = document.getElementById('relFim');
+    const botoesPeriodo = document.querySelectorAll('.preset');
+
+    const classesPeriodoAtivo = ['border-blue-600', 'ring-1', 'ring-blue-600', 'bg-blue-50/70', 'text-blue-700', 'dark:border-blue-500', 'dark:ring-blue-500', 'dark:bg-blue-950/40', 'dark:text-blue-300'];
+    const classesPeriodoInativo = ['border-slate-300', 'dark:border-slate-700', 'bg-white', 'dark:bg-slate-900'];
+
+    function destacarPeriodo(daysVal) {
+        botoesPeriodo.forEach(btn => {
+            const ativo = btn.dataset.days === String(daysVal);
+            btn.setAttribute('aria-pressed', String(ativo));
+            btn.classList.remove(...(ativo ? classesPeriodoInativo : classesPeriodoAtivo));
+            btn.classList.add(...(ativo ? classesPeriodoAtivo : classesPeriodoInativo));
+        });
+    }
+
+    const inicioValor = inicioEl.value || new URLSearchParams(window.location.search).get('inicio') || '';
+    if (inicioValor) {
+        const hoje = new Date();
+        hoje.setHours(0, 0, 0, 0);
+        const diffDias = Math.round((hoje - new Date(inicioValor + 'T00:00:00')) / 86400000);
+        if (diffDias <= 8) destacarPeriodo('7');
+        else if (diffDias <= 32) destacarPeriodo('30');
+        else destacarPeriodo('180');
+    } else {
+        destacarPeriodo('');
+    }
+
+    function renderChips() {
+        const chips = [];
+        if (searchEl.value) chips.push(['search', `Busca: “${searchEl.value}”`]);
+        if (statusEl.value) chips.push(['statusSel', `Status: ${statusText[statusEl.value] || statusEl.value}`]);
+        if (prioEl.value) chips.push(['prioSel', `Prioridade: ${prioText[prioEl.value] || prioEl.value}`]);
+        if (inicioEl.value) chips.push(['periodo', `A partir de: ${formatDate(inicioEl.value)}`]);
+
+        document.getElementById('chips').innerHTML = '<span class="text-slate-500 dark:text-slate-400">Filtros ativos:</span>' +
+            (chips.length
+                ? chips.map(([k, l]) => `
+                    <span class="inline-flex items-center gap-1 pl-2.5 pr-1 py-1 rounded-full bg-blue-50 dark:bg-blue-950/60 text-blue-800 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+                        ${l}
+                        <button type="button" data-rm="${k}" aria-label="Remover filtro ${l}" class="w-4 h-4 rounded-full hover:bg-blue-200 dark:hover:bg-blue-900 grid place-items-center">×</button>
+                    </span>`).join('') + '<a href="/relatorios" class="text-slate-600 dark:text-slate-300 underline ml-1">Limpar tudo</a>'
+                : '<span class="text-slate-500 dark:text-slate-400">Todos os registros</span>');
+    }
+
+    function submeterBuscaRelatorio() {
+        const valor = searchEl.value.trim();
+        if (valor) {
+            searchEl.name = 'busca';
+        } else {
+            searchEl.removeAttribute('name');
+        }
+        document.getElementById('relForm').submit();
+    }
+
+    if (searchEl.value) {
+        searchEl.focus();
+        const fimTexto = searchEl.value.length;
+        searchEl.setSelectionRange(fimTexto, fimTexto);
+    }
+
+    let searchTimer;
+    searchEl.addEventListener('input', () => {
+        clearTimeout(searchTimer);
+        searchTimer = setTimeout(submeterBuscaRelatorio, 800);
+    });
+
+    searchEl.addEventListener('keydown', e => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            clearTimeout(searchTimer);
+            submeterBuscaRelatorio();
+        }
+    });
+
+    document.addEventListener('click', e => {
+        if (e.target.closest('#relPrev')) {
+            if (currentPage > 0) {
+                currentPage--;
+                renderTabela();
+            }
+            return;
+        }
+        if (e.target.closest('#relNext')) {
+            const totalPages = Math.max(1, Math.ceil(data.length / pageSize));
+            if (currentPage < totalPages - 1) {
+                currentPage++;
+                renderTabela();
+            }
+            return;
+        }
+        const rm = e.target.closest('[data-rm]');
+        if (rm) {
+            const k = rm.dataset.rm;
+            if (k === 'periodo') {
+                inicioEl.value = '';
+                fimEl.value = '';
+                inicioEl.removeAttribute('name');
+                fimEl.removeAttribute('name');
+            } else {
+                const el = document.getElementById(k);
+                el.value = '';
+                if (k === 'search') el.removeAttribute('name');
+            }
+            document.getElementById('relForm').submit();
+        }
+        const th = e.target.closest('th[data-sort]');
+        if (th) {
+            const k = th.dataset.sort;
+            sortDir = sortKey === k ? -sortDir : 1;
+            sortKey = k;
+            currentPage = 0;
+            renderTabela();
+        }
+        const preset = e.target.closest('.preset');
+        if (preset) {
+            const daysVal = preset.dataset.days;
+            destacarPeriodo(daysVal);
+            const dias = Number(daysVal);
+            if (!dias) {
+                inicioEl.value = '';
+                fimEl.value = '';
+                inicioEl.removeAttribute('name');
+                fimEl.removeAttribute('name');
+            } else {
+                const hoje = new Date();
+                const ini = new Date();
+                ini.setDate(hoje.getDate() - dias);
+                const iso = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+                inicioEl.name = 'inicio';
+                fimEl.name = 'fim';
+                inicioEl.value = iso(ini);
+                fimEl.value = iso(hoje);
+            }
+            document.getElementById('relForm').submit();
+        }
+    });
+
+    const kpiList = [
+        { l: 'Total no período', v: String(indicadores.total), d: '100% do filtro', good: false, neutral: true, s: [4, 6, 5, 8, 7, 9, 11, 10] },
+        { l: 'Abertos', v: String(indicadores.abertos), d: 'Aguardando', good: false, s: [3, 4, 4, 5, 6, 5, 7, 6] },
+        { l: 'Em análise', v: String(indicadores.emAnalise), d: 'Em andamento', good: true, s: [6, 5, 5, 4, 4, 3, 3, 3] },
+        { l: 'Concluídos', v: String(indicadores.concluidos), d: `${Number(indicadores.percentualConcluido || 0).toFixed(0)}% do total`, good: true, s: [2, 3, 4, 5, 6, 7, 8, 9] },
+        { l: 'Alta / Urgente', v: String(indicadores.altaPrioridade), d: 'Prioritários', good: false, s: [2, 3, 2, 4, 3, 3, 4, 3] }
+    ];
+    kpiList.forEach((k, idx) => {
+        const max = Math.max(...k.s), min = Math.min(...k.s);
+        const pts = k.s.map((v, i) => `${i * (80 / 7)},${22 - ((v - min) / (max - min || 1)) * 20}`).join(' ');
+        const color = k.neutral ? 'text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800'
+            : k.good ? 'text-emerald-800 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60'
+                : 'text-red-800 dark:text-red-300 bg-red-50 dark:bg-red-950/60';
+        document.getElementById('kpis').insertAdjacentHTML('beforeend', `
+            <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 ${idx === 4 ? 'col-span-2 lg:col-span-1' : ''}">
+                <div class="text-xs text-slate-600 dark:text-slate-400">${k.l}</div>
+                <div class="flex items-end justify-between mt-1 gap-2">
+                    <div class="text-2xl font-semibold tabular-nums">${k.v}</div>
+                    <svg viewBox="0 0 80 24" class="w-16 h-6" aria-hidden="true">
+                        <polyline points="${pts}" fill="none" stroke="#2563eb" stroke-width="1.5"/>
+                    </svg>
+                </div>
+                <span class="inline-block mt-2 text-[11px] font-medium px-1.5 py-0.5 rounded ${color}">${k.d}</span>
+            </div>`);
+    });
+
+    const tooltipEl = document.getElementById('chartTooltip');
+    function mostrarTooltip(event, html) {
+        tooltipEl.innerHTML = html;
+        tooltipEl.classList.remove('hidden');
+        const offset = 14;
+        const rect = tooltipEl.getBoundingClientRect();
+        let left = event.clientX + offset;
+        let top = event.clientY + offset;
+        if (left + rect.width > window.innerWidth - 12) left = event.clientX - rect.width - offset;
+        if (top + rect.height > window.innerHeight - 12) top = event.clientY - rect.height - offset;
+        tooltipEl.style.left = `${left}px`;
+        tooltipEl.style.top = `${top}px`;
+    }
+    function esconderTooltip() {
+        tooltipEl.classList.add('hidden');
+    }
+
+    const datasUnicas = [...new Set(data.map(d => d.dataAbertura).filter(Boolean))].sort();
+    const seriesDatas = datasUnicas.length >= 2 ? datasUnicas : ['Início', 'Atual'];
+    const ab = datasUnicas.length >= 2
+        ? seriesDatas.map(dt => data.filter(d => d.dataAbertura === dt).length)
+        : [0, data.length];
+    const co = datasUnicas.length >= 2
+        ? seriesDatas.map(dt => data.filter(d => d.dataAbertura === dt && d.status === 'CONCLUIDO').length)
+        : [0, data.filter(d => d.status === 'CONCLUIDO').length];
+
+    const W = 600, H = 160, P = 24, maxLine = Math.max(...ab, ...co, 4);
+    const X = i => P + i * ((W - P * 2) / Math.max(ab.length - 1, 1));
+    const Y = v => H - P - (v / maxLine) * (H - P * 2);
+
+    let svgLine = '';
+    [0, Math.ceil(maxLine / 2), maxLine].forEach(v => {
+        svgLine += `<line x1="${P}" x2="${W - P}" y1="${Y(v)}" y2="${Y(v)}" stroke="#e2e8f0"/><text x="${P - 6}" y="${Y(v) + 3}" font-size="9" fill="#64748b" text-anchor="end">${v}</text>`;
+    });
+    seriesDatas.forEach((dt, i) => {
+        if (i % Math.ceil(seriesDatas.length / 6) === 0 || i === seriesDatas.length - 1) {
+            const labelDt = dt === 'Início' || dt === 'Atual' ? dt : formatDate(dt).slice(0, 5);
+            svgLine += `<text x="${X(i)}" y="${H - 6}" font-size="9" fill="#64748b" text-anchor="middle">${labelDt}</text>`;
+        }
+    });
+
+    svgLine += `<path d="M${ab.map((v, i) => X(i) + ',' + Y(v)).join(' L')} L${X(ab.length - 1)},${Y(0)} L${X(0)},${Y(0)}Z" fill="#2563eb" opacity=".08"/>`;
+    svgLine += `<polyline class="line-series cursor-pointer" data-serie="abertos" points="${ab.map((v, i) => X(i) + ',' + Y(v)).join(' ')}" fill="none" stroke="#2563eb" stroke-width="2.5"/>`;
+    svgLine += `<polyline class="line-series cursor-pointer" data-serie="concluidos" points="${co.map((v, i) => X(i) + ',' + Y(v)).join(' ')}" fill="none" stroke="#059669" stroke-width="2.5" stroke-dasharray="4 3"/>`;
+
+    seriesDatas.forEach((dt, i) => {
+        const dtLabel = dt === 'Início' || dt === 'Atual' ? dt : formatDate(dt);
+        svgLine += `<circle class="line-point cursor-pointer" data-date="${dtLabel}" data-ab="${ab[i]}" data-co="${co[i]}" cx="${X(i)}" cy="${Y(ab[i])}" r="4" fill="#2563eb" stroke="#ffffff" stroke-width="1.5"/>`;
+        svgLine += `<circle class="line-point cursor-pointer" data-date="${dtLabel}" data-ab="${ab[i]}" data-co="${co[i]}" cx="${X(i)}" cy="${Y(co[i])}" r="4" fill="#059669" stroke="#ffffff" stroke-width="1.5"/>`;
+    });
+
+    const lineSvgEl = document.getElementById('line');
+    lineSvgEl.innerHTML = svgLine;
+
+    lineSvgEl.querySelectorAll('.line-series').forEach(line => {
+        line.addEventListener('mousemove', e => {
+            const isAbertos = line.dataset.serie === 'abertos';
+            const html = isAbertos
+                ? `<div class="flex items-center gap-2 font-medium"><span class="w-2.5 h-2.5 rounded-full bg-blue-500"></span>Linha azul: Chamados abertos</div>
+                   <div class="text-slate-300">Total no período: <b>${indicadores.abertos}</b></div>`
+                : `<div class="flex items-center gap-2 font-medium"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>Linha verde: Chamados concluídos</div>
+                   <div class="text-slate-300">Total no período: <b>${indicadores.concluidos}</b></div>`;
+            mostrarTooltip(e, html);
+        });
+        line.addEventListener('mouseleave', esconderTooltip);
+    });
+
+    lineSvgEl.querySelectorAll('.line-point').forEach(pt => {
+        pt.addEventListener('mousemove', e => {
+            const html = `
+                <div class="font-semibold text-slate-200 border-b border-slate-700 pb-1 mb-1">${pt.dataset.date}</div>
+                <div class="flex items-center gap-2">
+                    <span class="w-2.5 h-2.5 rounded-full bg-blue-500"></span>
+                    <span>Abertos (azul): <b>${pt.dataset.ab}</b></span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+                    <span>Concluídos (verde): <b>${pt.dataset.co}</b></span>
+                </div>`;
+            mostrarTooltip(e, html);
+        });
+        pt.addEventListener('mouseleave', esconderTooltip);
+    });
+
+    const pr = [
+        ['Urgente', data.filter(d => d.prioridade === 'URGENTE').length, '#dc2626', 'Prioridade máxima · atendimento imediato'],
+        ['Alta', data.filter(d => d.prioridade === 'ALTA').length, '#ea580c', 'Prioridade alta · atenção rápida'],
+        ['Média', data.filter(d => d.prioridade === 'MEDIA').length, '#d97706', 'Prioridade média · fluxo normal'],
+        ['Baixa', data.filter(d => d.prioridade === 'BAIXA').length, '#2563eb', 'Prioridade baixa · sem urgência']
+    ];
+    const tot = pr.reduce((a, b) => a + b[1], 0);
+    const C = 2 * Math.PI * 40;
+    let off = 0, ds = '';
+    if (tot > 0) {
+        pr.forEach(([nome, v, c, desc]) => {
+            if (v > 0) {
+                const len = (v / tot) * C;
+                const pct = Math.round((v / tot) * 100);
+                ds += `<circle class="donut-slice cursor-pointer transition-opacity hover:opacity-80"
+                               data-label="${nome}"
+                               data-count="${v}"
+                               data-pct="${pct}"
+                               data-color="${c}"
+                               data-desc="${desc}"
+                               cx="50" cy="50" r="40"
+                               fill="none"
+                               stroke="${c}"
+                               stroke-width="14"
+                               stroke-dasharray="${Math.max(0, len - 1)} ${C - len + 1}"
+                               stroke-dashoffset="${-off}"/>`;
+                off += len;
+            }
+        });
+    }
+    const donutSvgEl = document.getElementById('donut');
+    donutSvgEl.innerHTML = ds;
+
+    donutSvgEl.querySelectorAll('.donut-slice').forEach(slice => {
+        slice.addEventListener('mousemove', e => {
+            const qtd = Number(slice.dataset.count);
+            const html = `
+                <div class="flex items-center gap-2 font-semibold">
+                    <span class="w-2.5 h-2.5 rounded-sm" style="background:${slice.dataset.color}"></span>
+                    <span>Prioridade ${slice.dataset.label}: ${qtd} ${qtd === 1 ? 'chamado' : 'chamados'} (${slice.dataset.pct}%)</span>
+                </div>
+                <div class="text-slate-300">${slice.dataset.desc}</div>`;
+            mostrarTooltip(e, html);
+        });
+        slice.addEventListener('mouseleave', esconderTooltip);
+    });
+
+    document.getElementById('donutLegend').innerHTML = pr.map(([n, v, c]) => `
+        <li class="flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-sm" style="background:${c}"></span>
+            <span class="flex-1">${n}</span>
+            <span class="tabular-nums font-medium">${v}</span>
+            <span class="tabular-nums text-slate-500 dark:text-slate-400 w-9 text-right">${tot > 0 ? Math.round((v / tot) * 100) : 0}%</span>
+        </li>`).join('');
+
+    const cats = ['Suporte técnico', 'Documentos', 'Matrícula', 'Atendimento acadêmico']
+        .map(nome => [nome, data.filter(d => d.categoria === nome).length]);
+    const cm = Math.max(...cats.map(c => c[1]), 1);
+    document.getElementById('bars').innerHTML = cats.map(([n, v]) => `
+        <li>
+            <div class="flex justify-between text-sm mb-1">
+                <span>${n}</span>
+                <span class="tabular-nums font-medium">${v} <span class="text-slate-500 dark:text-slate-400 font-normal">· ${tot > 0 ? Math.round((v / tot) * 100) : 0}%</span></span>
+            </div>
+            <div class="h-2.5 rounded-full bg-slate-100 dark:bg-slate-800">
+                <div class="h-full rounded-full bg-blue-600" style="width:${(v / cm) * 100}%"></div>
+            </div>
+        </li>`).join('');
+
+    renderChips();
+    renderTabela();
+</script>
+</body>
+</html>
