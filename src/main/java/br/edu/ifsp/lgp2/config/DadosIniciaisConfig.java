@@ -1,7 +1,5 @@
 package br.edu.ifsp.lgp2.config;
 
-import br.edu.ifsp.lgp2.dto.ChamadoCadastroDTO;
-import br.edu.ifsp.lgp2.factory.ChamadoFactory;
 import br.edu.ifsp.lgp2.model.Chamado;
 import br.edu.ifsp.lgp2.repository.ChamadoRepository;
 import org.springframework.boot.CommandLineRunner;
@@ -9,96 +7,126 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
 
-/*
-- Carga inicial para demonstração: só roda com o banco vazio.
- */
 @Configuration
 public class DadosIniciaisConfig {
 
-    private record ChamadoDemo(String titulo, String descricao, String categoria, String status,
-                               String prioridade, String observacao, int diasAtras) {
-    }
-
     @Bean
-    public CommandLineRunner carregaDadosIniciais(ChamadoRepository repository) {
+    CommandLineRunner carregarDadosIniciais(ChamadoRepository repository) {
         return args -> {
             if (repository.count() > 0) {
                 return;
             }
 
-            List<ChamadoDemo> exemplos = List.of(
-                    new ChamadoDemo("Problema no laboratório", "Computador do laboratório não liga.",
-                            "Suporte técnico", "ABERTO", null, null, 1),
-                    new ChamadoDemo("Solicitação de declaração", "Preciso de declaração de matrícula.",
-                            "Documentos", "ABERTO", null, null, 2),
-                    new ChamadoDemo("Ajuste de matrícula", "Solicito ajuste em unidade curricular.",
-                            "Matrícula", "EM_ANALISE", null, "Encaminhado à coordenação para análise.", 4),
-                    new ChamadoDemo("Wi-Fi instável na biblioteca", "A rede cai várias vezes durante o dia.",
-                            "Suporte técnico", "EM_ANALISE", "URGENTE",
-                            "Equipe de TI verificando o roteador do 2º andar.", 6),
-                    new ChamadoDemo("Histórico escolar", "Preciso do histórico escolar atualizado.",
-                            "Documentos", "CONCLUIDO", null, "Documento enviado por e-mail.", 12),
-                    new ChamadoDemo("Dúvida sobre estágio",
-                            "Quais documentos são necessários para o estágio obrigatório?",
-                            "Atendimento acadêmico", "CONCLUIDO", null, "Orientações enviadas ao aluno.", 18),
-                    new ChamadoDemo("Cancelamento de matrícula em disciplina", "Solicitação feita por engano.",
-                            "Matrícula", "CANCELADO", null, "Solicitação cancelada a pedido do aluno.", 25),
-                    new ChamadoDemo("Projetor da sala 204 sem imagem", "O projetor liga, mas não exibe imagem.",
-                            "Suporte técnico", "CONCLUIDO", null, "Cabo HDMI substituído.", 30),
-                    new ChamadoDemo("Declaração de vínculo para estágio",
-                            "Preciso de declaração de vínculo com a instituição.",
-                            "Documentos", "CONCLUIDO", null, "Declaração emitida pela secretaria.", 38),
-                    new ChamadoDemo("Trancamento de matrícula",
-                            "Quero saber o prazo e o procedimento para trancar o semestre.",
-                            "Matrícula", "ABERTO", null, null, 45),
-                    new ChamadoDemo("Acesso ao e-mail institucional", "Esqueci a senha do e-mail institucional.",
-                            "Suporte técnico", "CONCLUIDO", "MEDIA", "Senha redefinida pela equipe de TI.", 52),
-                    new ChamadoDemo("Informações sobre monitoria",
-                            "Como me candidato à monitoria no próximo semestre?",
-                            "Atendimento acadêmico", "EM_ANALISE", null, "Aguardando edital da coordenação.", 58)
+            LocalDate hoje = LocalDate.now();
+
+            List<Chamado> chamados = List.of(
+                    montar("Computador 05 do laboratório de redes não liga",
+                            "A máquina da bancada 5 não apresenta sinal de energia ao pressionar o botão frontal.",
+                            "Suporte técnico", "ALTA", "Equipe de TI", "ABERTO", hoje, null),
+
+                    montar("Declaração de matrícula para passe escolar",
+                            "Solicito declaração de matrícula atualizada para renovação do bilhete estudantil.",
+                            "Documentos", "MEDIA", "Secretaria Acadêmica", "CONCLUIDO", hoje.minusDays(1),
+                            "Declaração emitida e disponibilizada no portal do estudante."),
+
+                    montar("Inclusão de disciplina optativa no semestre",
+                            "Solicito orientação e ajuste para incluir disciplina optativa dentro do prazo.",
+                            "Matrícula", "MEDIA", "Coordenação de Curso", "EM_ANALISE", hoje.minusDays(2),
+                            "Verificando disponibilidade de vagas na turma solicitada."),
+
+                    montar("Dúvida sobre aproveitamento de estudos anteriores",
+                            "Gostaria de saber o procedimento e prazos para solicitar dispensa de disciplina.",
+                            "Atendimento acadêmico", "BAIXA", "Atendimento Acadêmico", "CONCLUIDO", hoje.minusDays(4),
+                            "Orientações e formulário enviados por e-mail institucional."),
+
+                    montar("Sem acesso ao sistema acadêmico com senha antiga",
+                            "Após redefinir a senha, o login continua falhando no portal do estudante.",
+                            "Suporte técnico", "ALTA", "Equipe de TI", "EM_ANALISE", hoje.minusDays(5),
+                            "Sincronização de credenciais em andamento junto ao diretório."),
+
+                    montar("Histórico escolar parcial para estágio obrigatório",
+                            "Preciso do histórico escolar parcial assinado para entrega na empresa concedente.",
+                            "Documentos", "ALTA", "Secretaria Acadêmica", "CONCLUIDO", hoje.minusDays(8),
+                            "Histórico assinado digitalmente anexado ao protocolo."),
+
+                    montar("Pendência de comprovante na efetivação de matrícula",
+                            "Recebi aviso de pendência documental e preciso confirmar a situação da matrícula.",
+                            "Matrícula", "URGENTE", "Coordenação de Curso", "ABERTO", hoje.minusDays(10), null),
+
+                    montar("Impressora da secretaria com atolamento de papel",
+                            "O equipamento exibe mensagem de papel preso na bandeja inferior e interrompeu a fila.",
+                            "Suporte técnico", "MEDIA", "Equipe de TI", "CONCLUIDO", hoje.minusDays(12),
+                            "Papel removido, roletes limpos e impressão normalizada."),
+
+                    montar("Horário de atendimento da coordenação do curso",
+                            "Gostaria de confirmar os dias e horários de atendimento presencial da coordenação.",
+                            "Atendimento acadêmico", "BAIXA", "Atendimento Acadêmico", "CONCLUIDO", hoje.minusDays(15),
+                            "Atendimento presencial às terças e quintas, das 18h às 21h."),
+
+                    montar("Atestado de frequência para bolsa estudantil",
+                            "Solicito documento comprobatório de frequência referente ao mês vigente.",
+                            "Documentos", "MEDIA", "Secretaria Acadêmica", "EM_ANALISE", hoje.minusDays(18),
+                            "Aguardando fechamento do diário pelo docente responsável."),
+
+                    montar("Solicitação de trancamento de matrícula",
+                            "Preciso de informações sobre regras e prazo para trancar o curso neste semestre.",
+                            "Matrícula", "BAIXA", "Coordenação de Curso", "CANCELADO", hoje.minusDays(22),
+                            "Cancelado a pedido do próprio aluno após orientação."),
+
+                    montar("Projetor da sala 108 sem imagem no HDMI",
+                            "O projetor liga normalmente, mas não detecta o sinal de vídeo enviado pelo notebook.",
+                            "Suporte técnico", "ALTA", "Equipe de TI", "CONCLUIDO", hoje.minusDays(26),
+                            "Cabo HDMI substituído e projeção testada."),
+
+                    montar("Regras para horas complementares do curso",
+                            "Dúvida sobre quais certificados e atividades são aceitos como horas complementares.",
+                            "Atendimento acadêmico", "BAIXA", "Atendimento Acadêmico", "CONCLUIDO", hoje.minusDays(35),
+                            "Tabela de atividades e limites por categoria enviada."),
+
+                    montar("Ementa de disciplina para transferência externa",
+                            "Solicito a ementa oficial das disciplinas cursadas para processo de transferência.",
+                            "Documentos", "MEDIA", "Secretaria Acadêmica", "ABERTO", hoje.minusDays(42), null),
+
+                    montar("Troca de turma por choque de horário",
+                            "Solicito alteração de turma devido a conflito de horário com disciplina obrigatória.",
+                            "Matrícula", "ALTA", "Coordenação de Curso", "CONCLUIDO", hoje.minusDays(50),
+                            "Remanejamento efetuado conforme grade horária.")
             );
 
-            repository.saveAll(exemplos.stream().map(this::montarChamado).toList());
+            repository.saveAll(chamados);
         };
     }
 
-    private Chamado montarChamado(ChamadoDemo exemplo) {
-        ChamadoCadastroDTO dto = new ChamadoCadastroDTO(
-                exemplo.titulo(),
-                exemplo.descricao(),
-                exemplo.categoria()
-        );
-        Chamado chamado = ChamadoFactory.criar(dto);
+    private Chamado montar(String titulo,
+                           String descricao,
+                           String categoria,
+                           String prioridade,
+                           String responsavel,
+                           String status,
+                           LocalDate dataAbertura,
+                           String observacao) {
+        Chamado c = new Chamado();
+        c.setTitulo(titulo);
+        c.setDescricao(descricao);
+        c.setCategoria(categoria);
+        c.setPrioridade(prioridade);
+        c.setResponsavel(responsavel);
+        c.setStatus(status);
+        c.setDataAbertura(dataAbertura);
+        c.setDataAtualizacao(dataAbertura);
+        c.setObservacaoAtendimento(observacao);
 
-        LocalDate abertura = LocalDate.now().minusDays(exemplo.diasAtras());
-        LocalDate atualizacao = abertura.plusDays(Math.min(exemplo.diasAtras(), 2));
+        LocalDateTime horarioAbertura = LocalDateTime.of(dataAbertura, LocalTime.of(9, 0));
+        c.registrarHistorico(horarioAbertura, "ABERTO", responsavel, "Chamado aberto no sistema.");
 
-        chamado.setDataAbertura(abertura);
-        chamado.setDataAtualizacao(atualizacao);
-
-        // Ajusta a data do evento inicial criado pela Factory para a data simulada de abertura
-        if (!chamado.getHistorico().isEmpty()) {
-            chamado.getHistorico().get(0).setDataHora(abertura.atTime(9, 15));
+        if (!"ABERTO".equals(status)) {
+            c.registrarHistorico(horarioAbertura.plusHours(2), status, responsavel, observacao);
         }
 
-        if (exemplo.prioridade() != null) {
-            chamado.setPrioridade(exemplo.prioridade());
-        }
-
-        chamado.setStatus(exemplo.status());
-        chamado.setObservacaoAtendimento(exemplo.observacao());
-
-        if (!"ABERTO".equals(exemplo.status())) {
-            chamado.registrarHistorico(
-                    atualizacao.atTime(14, 30),
-                    exemplo.status(),
-                    chamado.getResponsavel(),
-                    exemplo.observacao()
-            );
-        }
-
-        return chamado;
+        return c;
     }
 }
